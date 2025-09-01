@@ -3,7 +3,6 @@ import argparse
 import os
 import warnings
 
-
 def load_conf(path:str = None, method:str = None, dataset:str = None):
     '''
     Function to load config file.
@@ -38,8 +37,12 @@ def load_conf(path:str = None, method:str = None, dataset:str = None):
         if os.path.exists(path) == False:
             raise KeyError("The configuration file is not provided.")
 
-    conf = open(path, "r").read()
-    conf = yaml.load(conf)
+    # conf = open(path, "r").read()
+    # conf = yaml.load(conf)
+
+    my_yaml = yaml.YAML(typ='safe')  # or typ='rt' if you want round-trip parsing
+    with open(path, 'r') as f:
+        conf = my_yaml.load(f)
 
     try:
         import nni

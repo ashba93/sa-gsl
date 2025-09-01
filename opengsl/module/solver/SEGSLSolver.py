@@ -7,7 +7,7 @@ import time
 from .solver import Solver
 from opengsl.module.functional import normalize
 from torch_sparse import SparseTensor
-from torch_geometric.utils import remove_self_loops, add_self_loops, to_torch_sparse_tensor
+from torch_geometric.utils import remove_self_loops, add_self_loops#, to_torch_sparse_tensor
 
 
 class SEGSLSolver(Solver):
@@ -171,7 +171,9 @@ class SEGSLSolver(Solver):
         # graph = dgl.add_self_loop(graph)
         new_edge_index, _ = remove_self_loops(new_edge_index)
         new_edge_index, _ = add_self_loops(new_edge_index, num_nodes=self.n_nodes)
-        adj = to_torch_sparse_tensor(new_edge_index, size=(self.n_nodes, self.n_nodes)).to(self.device)
+        num_nodes = new_edge_index.size(0)  # number of nodes
+        adj = torch.sparse_coo_tensor(new_edge_index, torch.ones(new_edge_index.size(1)), (self.n_nodes, self.n_nodes)).to(self.device)
+        # adj = to_torch_sparse_tensor(new_edge_index, size=(self.n_nodes, self.n_nodes)).to(self.device)
 
         return adj
 

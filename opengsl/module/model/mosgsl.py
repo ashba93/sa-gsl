@@ -15,17 +15,25 @@ from opengsl.module.fuse import Interpolate
 # from .gsl import BasicSubGraphLearner, MotifVector, BasicGraphLearner
 from torch_geometric.nn import global_add_pool
 import torch.nn.functional as F
-from torch_geometric.nn.pool.select.topk import topk
-from torch_geometric.utils import to_dense_adj, subgraph, cumsum, scatter, degree, softmax, coalesce, dense_to_sparse
+# from torch_geometric.nn.pool.select.topk import topk
+from torch_geometric.utils import to_dense_adj, subgraph, scatter, degree, softmax, coalesce, dense_to_sparse#, cumsum
 from torch_geometric.data import Data, Batch
 from torch_geometric.nn import inits
 from torch_geometric.nn.resolver import activation_resolver
-from torch_geometric.nn.pool.connect.filter_edges import filter_adj
+# from torch_geometric.nn.pool.connect.filter_edges import filter_adj
+from torch_geometric.utils import subgraph
 from tqdm import tqdm
 import pickle
 from sklearn.cluster import KMeans
 import torch.nn.functional as F
 import torch.nn.init as init
+
+
+def topk(x, batch, ratio=0.5):
+    num_nodes = x.size(0)
+    k = max(1, int(ratio * num_nodes))
+    _, idx = torch.topk(x[:,0], k)  # Example: topk by first feature
+    return idx
 
 
 # ----------- BFS Parsing -----------
@@ -121,7 +129,8 @@ class SimpleParsingModule(nn.Module):
             batch_subgraphs_nodes_list = []
             batch_belong_list = torch.tensor([], dtype=torch.long).to(device)
             n_nodes_graph = scatter(batch.batch.new_ones(batch.batch.shape[0]), batch.batch)
-            cum_n_nodes = cumsum(n_nodes_graph)
+            # cum_n_nodes = cumsum(n_nodes_graph)
+            cum_n_nodes = torch.cumsum(n_nodes_graph, axis=0)
             for k, g in enumerate(graphs_list):
                 subs_list = self.graphs2subgraphs[g.idx.item()]
                 subs_belong = torch.full((len(subs_list),), k, dtype=torch.long).to(device)
@@ -143,7 +152,8 @@ class SimpleParsingModule(nn.Module):
             batch_subs = Batch.from_data_list(batch_subgraphs_list).to(device)
             if self.return_new_mapping:
                 n_nodes_graph = scatter(batch.batch.new_ones(batch.batch.shape[0]), batch.batch)
-                cum_n_nodes = cumsum(n_nodes_graph)
+                cum_n_nodes = torch.cumsum(n_nodes_graph, axis=0)
+                # cum_n_nodes = cumsum(n_nodes_graph)
                 new_mapping = batch_subs.mapping + cum_n_nodes[batch_belong_list[batch_subs.batch]]
             else:
                 new_mapping = None
@@ -204,7 +214,8 @@ class SubgraphSelectModule(nn.Module):
             sub_mask[sub_index] = torch.arange(sub_index.shape[0], device=sub_index.device)
             batch_after_select = sub_mask[batch_sub.batch]
             node_index = torch.where(batch_after_select >= 0)[0]
-            new_edge_index, _ = filter_adj(batch_sub.edge_index, node_index=node_index, num_nodes=batch_sub.num_nodes, edge_attr=None)
+            # new_edge_index, _ = filter_adj(batch_sub.edge_index, node_index=node_index, num_nodes=batch_sub.num_nodes, edge_attr=None)
+            new_edge_index, _ = subgraph(node_index, batch_sub.edge_index, edge_attr, relabel_nodes=True)
             new_x = batch_sub.x[node_index]
             new_batch = batch_after_select[node_index]
             new_belong = belong[sub_index]
@@ -213,7 +224,8 @@ class SubgraphSelectModule(nn.Module):
             else:
                 new_mapping = batch_sub.mapping[node_index]   # 这个mapping对应原来图里的实际位置
             if 'full_edge_index' in batch_sub:
-                new_full_edge_index, _ = filter_adj(batch_sub.full_edge_index, node_index=node_index, num_nodes=batch_sub.num_nodes, edge_attr=None)
+                # new_full_edge_index, _ = filter_adj(batch_sub.full_edge_index, node_index=node_index, num_nodes=batch_sub.num_nodes, edge_attr=None)
+                new_full_edge_index, _ = subgraph(node_index, batch_sub.full_edge_index, edge_attr, relabel_nodes=True)
             else:
                 new_full_edge_index = None
             return new_x, z_node[node_index], z_sub[sub_index], new_edge_index, new_batch, new_belong, new_mapping, score[sub_index], new_full_edge_index
@@ -402,7 +414,8 @@ class BasicGraphLearner(nn.Module):
     def prepare_full_edge_index(self, batch):
         full_edge_index = batch.new_tensor([])
         n_nodes = scatter(batch.new_ones(batch.shape[0]), batch)
-        cum_nodes = cumsum(n_nodes)
+        # cum_nodes = cumsum(n_nodes)
+        cum_nodes = torch.cumsum(n_nodes, axis=0)
         for i in range(len(n_nodes)):
             tmp = torch.arange(cum_nodes[i], cum_nodes[i+1], device=batch.device)
             row, col = torch.meshgrid(tmp, tmp)

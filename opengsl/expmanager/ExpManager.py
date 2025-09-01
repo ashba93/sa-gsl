@@ -6,7 +6,17 @@ import os
 import time as time
 import copy
 import ruamel.yaml as yaml
-from torch_geometric import seed_everything
+import random
+import numpy as np
+# from torch_geometric import seed_everything
+
+def seed_everything(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 class ExpManager:

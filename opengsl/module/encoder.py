@@ -16,7 +16,7 @@ from torch_geometric.nn.aggr import Aggregation
 from torch_geometric.nn.norm import BatchNorm, LayerNorm, GraphNorm
 from torch_sparse import SparseTensor, matmul
 from torch_scatter import segment_csr
-from torch_geometric.utils import cumsum, scatter, is_torch_sparse_tensor
+from torch_geometric.utils import scatter
 
 
 class AttentiveLayer(nn.Module):
@@ -404,7 +404,7 @@ class GNNEncoder_OpenGSL(nn.Module):
                 x = self.output_normalization(x)
             x = self.output_linear(x)
         else:
-            mid = xs[-2]
+            mid = xs[-1]
         if return_mid:
             return mid, x.squeeze(1)
         else:
@@ -781,5 +781,8 @@ class SAGEConvPlus(SAGEConv):
 
 def global_pool(x: Tensor, batch: Tensor, reduce='mean') -> Tensor:
     ones = torch.ones_like(batch)
-    ptr = cumsum(scatter(ones, batch))
-    return segment_csr(x, ptr, reduce=reduce)
+    # ptr = cumsum(scatter(ones, batch))
+    counts = scatter(ones, batch, dim=0, reduce='sum')
+    ptr = torch.cumsum(counts, dim=0)
+    # return segment_csr(x, ptr, reduce=reduce)
+

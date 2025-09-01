@@ -41,7 +41,7 @@ class Solver:
     def __init__(self, conf, dataset):
         self.dataset = dataset
         self.conf = conf
-        self.device = torch.device('cuda') if not ('use_cpu' in conf and conf.use_cpu) else torch.device('cpu')
+        self.device = torch.device('cpu') if not ('use_cpu' in conf and conf.use_cpu) else torch.device('cpu')
         self.method_name = ''
         self.single_graph = dataset.single_graph
         if self.single_graph:

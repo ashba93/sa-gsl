@@ -11,7 +11,7 @@ def add_knn(k, node_embed, edge_index):
     # 这里用cosine，和论文中不一致
     knn_g = dgl.knn_graph(node_embed,
                           k,
-                          algorithm='bruteforce-sharemem',
+                          algorithm='bruteforce',
                           dist='cosine')
     knn_g = dgl.add_reverse_edges(knn_g)
     knn_edge_index = knn_g.edges()

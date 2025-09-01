@@ -40,7 +40,7 @@ class Dataset:
         self.feat_norm = feat_norm
         self.verbose = verbose
         self.path = path
-        self.device = torch.device('cuda')
+        self.device = torch.device('cpu')
         self.single_graph = True
         self.split_params = split_params
         self.n_splits = n_splits
