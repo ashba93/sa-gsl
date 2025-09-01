@@ -22,7 +22,7 @@ def drop_edges(A, rate=0.2):
     idx = torch.nonzero(A.to_dense(), as_tuple=False)
     mask = torch.rand(idx.shape[0]) > rate
     new_idx = idx[mask]
-    return torch.sparse_coo_tensor(new_idx.t(), torch.ones(new_idx.shape[0]), A.shape).to(A.device)
+    return torch.sparse_coo_tensor(new_idx.t().to(A.device), torch.ones(new_idx.shape[0]).to(A.device), A.shape).to(A.device)
 
 
 def ensemble_sa_adjs(sa, n_graphs=3, dropedge_rate=0.1, prev_train_acc=0):
@@ -55,12 +55,14 @@ def train(dataset,
           reg_weight,
           n_hidden,
           n_layers,
-          dropout):
+          dropout,
+          seed):
     train_mask = dataset.train_masks[0]
     val_mask = dataset.val_masks[0]
     test_mask = dataset.test_masks[0]
-    device = torch.device("cpu")
-    set_seed(42)
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+    print(device)
+    set_seed(seed)
 
     num_nodes = int(dataset.adj.shape[0])
     num_classes = int(dataset.n_classes)
@@ -112,7 +114,7 @@ def train(dataset,
     dropedge_rate = dropedge_rate
     n_ensemble = n_ensemble
     epochs_no_improve = 0
-    patience = int(n_epochs / 2)
+    patience = 40
 
     optim = torch.optim.Adam(list(gnn.parameters()), lr=lr, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=n_epochs)
@@ -123,7 +125,7 @@ def train(dataset,
 
         A_ref_ens = ensemble_sa_adjs(sa=sa, n_graphs=n_ensemble, dropedge_rate=dropedge_rate, prev_train_acc=prev_train_acc)
 
-        A_ref_ens = A_ref_ens.to_dense()
+        A_ref_ens = A_ref_ens.to_dense().to(device)
 
         A_raw = dataset.adj.to(device)
 
@@ -133,14 +135,14 @@ def train(dataset,
 
         A_ens = alpha * A_raw + (1 - alpha) * A_ref_ens
 
-        output = gnn(dataset.feats, A_ens)
+        output = gnn(dataset.feats.to(device), A_ens.to(device))
 
         adj_density = (A_ref_ens != 0).float().mean()
         degree_penalty = torch.clamp(A_ref_ens.sum(1) - sa.max_allowed_degree, min=0).sum() / num_nodes
 
         reg_term = reg_weight * adj_density + reg_weight * degree_penalty
 
-        loss_train = F.cross_entropy(output[train_mask], dataset.labels[train_mask]) + reg_term
+        loss_train = F.cross_entropy(output[train_mask].to(device), dataset.labels[train_mask].to(device)) + reg_term
         loss_train.backward()
         optim.step()
         scheduler.step()
@@ -150,8 +152,8 @@ def train(dataset,
 
         gnn.eval()
         with torch.no_grad():
-            out_val = gnn(dataset.feats, A_ens)
-            loss_val = F.cross_entropy(out_val[val_mask], dataset.labels[val_mask])
+            out_val = gnn(dataset.feats.to(device), A_ens.to(device))
+            loss_val = F.cross_entropy(out_val[val_mask].to(device), dataset.labels[val_mask].to(device))
             val_acc = accuracy(dataset.labels[val_mask].cpu().numpy(),
                                out_val[val_mask].detach().cpu().numpy())
 
@@ -177,8 +179,8 @@ def train(dataset,
 
     gnn.eval()
     with torch.no_grad():
-        out_test = gnn(dataset.feats, A_ens)
-        loss_test = F.cross_entropy(out_test[test_mask], dataset.labels[test_mask])
+        out_test = gnn(dataset.feats.to(device), A_ens.to(device))
+        loss_test = F.cross_entropy(out_test[test_mask].to(device), dataset.labels[test_mask].to(device))
         test_acc = accuracy(dataset.labels[test_mask].cpu().numpy(),
                             out_test[test_mask].detach().cpu().numpy())
 
@@ -206,6 +208,8 @@ def objective(trial):
     n_layers = trial.suggest_int("n_layers",1,3)
     dropout = trial.suggest_float("dropout",0,1)
 
+    seed=42
+
     test_acc=train(dataset,
                    alpha,
                    beta,
@@ -224,7 +228,8 @@ def objective(trial):
                    reg_weight,
                    n_hidden,
                    n_layers,
-                   dropout)
+                   dropout,
+                   seed)
 
     return test_acc
 
@@ -235,31 +240,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     dataset_name = args.dataset
     dataset = Dataset(dataset_name, n_splits=1, split="random", cv=5)
-    with open("best_params.json") as f:
-        best_params=json.load(f)
-    # if best_params[dataset_name]:
-    #     bp=best_params[dataset_name]
-    #     print(bp)
-    #     train(dataset,
-    #           best_params[dataset_name]["alpha"],
-    #           best_params[dataset_name]["beta"],
-    #           best_params[dataset_name]["gamma"],
-    #           best_params[dataset_name]["lambda_"],
-    #           best_params[dataset_name]["delta"],
-    #           best_params[dataset_name]["max_allowed_degree"],
-    #           best_params[dataset_name]["add_fraction"],
-    #           best_params[dataset_name]["n_epochs"],
-    #           best_params[dataset_name]["alpha_start"],
-    #           best_params[dataset_name]["alpha_end"],
-    #           best_params[dataset_name]["dropedge_rate"],
-    #           best_params[dataset_name]["n_ensemble"],
-    #           best_params[dataset_name]["lr"],
-    #           best_params[dataset_name]["weight_decay"],
-    #           best_params[dataset_name]["reg_weight"],
-    #           best_params[dataset_name]["n_hidden"],
-    #           best_params[dataset_name]["n_layers"],
-    #           best_params[dataset_name]["dropout"])
-    # else:
+
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=20)
 
@@ -279,3 +260,35 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+    best_params = trial.params
+
+    results = []
+    for seed in range(10):
+        print(f"\n=== Run {seed+1}/10 with seed {seed} ===")
+        acc = train(dataset,
+                    best_params["alpha"],
+                    best_params["beta"],
+                    best_params["gamma"],
+                    best_params["lambda_"],
+                    best_params["delta"],
+                    best_params["max_allowed_degree"],
+                    best_params["add_fraction"],
+                    best_params["n_epochs"],
+                    best_params["alpha_start"],
+                    best_params["alpha_end"],
+                    best_params["dropedge_rate"],
+                    best_params["n_ensemble"],
+                    best_params["lr"],
+                    best_params["weight_decay"],
+                    best_params["reg_weight"],
+                    best_params["n_hidden"],
+                    best_params["n_layers"],
+                    best_params["dropout"],  # if it exists
+                    seed=seed)
+        results.append(acc)
+
+    print("\n=== Final Results over 10 runs ===")
+    print("Accuracies:", results)
+    print("Mean:", np.mean(results))
+    print("Std:", np.std(results))

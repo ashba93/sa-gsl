@@ -26,7 +26,7 @@ class SimulatedAnnealingRefiner:
         delta=0.1,
         max_allowed_degree=20,
         add_fraction=0.05,
-        device="cpu"
+        device="cuda"
     ):
         self.num_nodes = int(num_nodes)
         if isinstance(feats, torch.Tensor):
