@@ -34,9 +34,7 @@ pip install -e .
 
 ## 🚀Quick Start
 
-You can use the command `python examples/gcn_cora.py` or follow the 4 steps.
-
-The following example shows you how to run [GRCN](https://arxiv.org/abs/1911.07123) on the Cora dataset. 
+You can use the command `python opt_sagsl.py --dataset cora`.
 
 ## Citation
 
