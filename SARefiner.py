@@ -52,7 +52,7 @@ class SimulatedAnnealingRefiner:
         self.remove_n_edges = base
 
         self.time_step = 0
-        self.prev_energy = -1e12
+        self.prev_energy = 1e-12
         self.prev_acc = None
         self.earlystop_counter = 0
 
@@ -161,9 +161,9 @@ class SimulatedAnnealingRefiner:
         energy, ndcg_mean, perc_deg, avg_deg, deg_pen, out_degrees = self._evaluate_energy(self.adj_sub, current_acc)
         max_deg = int(np.max(out_degrees)) if self.num_nodes > 0 else 0
 
-        if energy < self.prev_energy and (perc_deg > 0.1 or max_deg >= self.max_allowed_degree):
-            delta_e = energy - self.prev_energy
-            p_accept = float(min(1.0, np.exp(-delta_e / (temperature + 1e-9))))
+        delta_e = energy - self.prev_energy
+        if delta_e < 0 and (perc_deg < 0.1 or max_deg <= self.max_allowed_degree):
+            p_accept = float(np.exp(delta_e / (temperature + 1e-9)))
             if np.random.rand() >= p_accept:
                 self.adj_sub = adj_copy.copy()
         self.prev_energy = energy

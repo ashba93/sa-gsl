@@ -114,7 +114,7 @@ def train(dataset,
     dropedge_rate = dropedge_rate
     n_ensemble = n_ensemble
     epochs_no_improve = 0
-    patience = 40
+    patience = 100
 
     optim = torch.optim.Adam(list(gnn.parameters()), lr=lr, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=n_epochs)
@@ -186,7 +186,7 @@ def train(dataset,
 
     print(f"\nBest Val Acc: {best_val_acc:.4f} | Test Acc: {test_acc:.4f} | Test Loss: {loss_test.item():.4f}")
 
-    return test_acc
+    return best_val_acc
 
 def objective(trial):
     alpha= trial.suggest_float("alpha",0.1,100.0)
@@ -210,28 +210,28 @@ def objective(trial):
 
     seed=42
 
-    test_acc=train(dataset,
-                   alpha,
-                   beta,
-                   gamma,
-                   lambda_,
-                   delta,
-                   max_allowed_degree,
-                   add_fraction,
-                   n_epochs,
-                   alpha_start,
-                   alpha_end,
-                   dropedge_rate,
-                   n_ensemble,
-                   lr,
-                   weight_decay,
-                   reg_weight,
-                   n_hidden,
-                   n_layers,
-                   dropout,
-                   seed)
+    best_val_acc=train(dataset,
+                       alpha,
+                       beta,
+                       gamma,
+                       lambda_,
+                       delta,
+                       max_allowed_degree,
+                       add_fraction,
+                       n_epochs,
+                       alpha_start,
+                       alpha_end,
+                       dropedge_rate,
+                       n_ensemble,
+                       lr,
+                       weight_decay,
+                       reg_weight,
+                       n_hidden,
+                       n_layers,
+                       dropout,
+                       seed)
 
-    return test_acc
+    return best_val_acc
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SA-GSL pipeline")
