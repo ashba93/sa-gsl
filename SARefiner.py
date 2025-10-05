@@ -90,12 +90,15 @@ class SimulatedAnnealingRefiner:
 
     @staticmethod
     def _dcg_at_k(relevance, k):
+        k = min(k, relevance.shape[1])
         relevance = np.asfarray(relevance)[:, :k]
         discounts = np.log2(np.arange(1, k + 1) + 1)
         return np.sum(relevance / discounts, axis=1)
 
     @staticmethod
     def _ndcg_at_k(predictions, ground_truth, k):
+        actual_k_for_query = ground_truth.shape[1]
+        k = min(k, actual_k_for_query)
         ranked_indices = np.argsort(predictions, axis=1)[:, ::-1]
         relevance = np.take_along_axis(ground_truth, ranked_indices, axis=1)
         dcg = SimulatedAnnealingRefiner._dcg_at_k(relevance, k)

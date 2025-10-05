@@ -3,7 +3,7 @@ load data via pyg
 '''
 
 from torch_geometric.datasets import Planetoid, Amazon, Coauthor, WikiCS, WikipediaNetwork, WebKB, Actor, \
-    TUDataset, CitationFull, AttributedGraphDataset#, HeterophilousGraphDataset
+    TUDataset, CitationFull, AttributedGraphDataset, HeterophilousGraphDataset
 from torch_geometric.data.separate import separate
 from opengsl.data.dataset.csbm_load import dataset_ContextualSBM
 import os
