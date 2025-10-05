@@ -186,7 +186,7 @@ def train(dataset,
 
     print(f"\nBest Val Acc: {best_val_acc:.4f} | Test Acc: {test_acc:.4f} | Test Loss: {loss_test.item():.4f}")
 
-    return best_val_acc
+    return best_val_acc, test_acc
 
 def objective(trial):
     alpha= trial.suggest_float("alpha",0.1,100.0)
@@ -210,26 +210,26 @@ def objective(trial):
 
     seed=42
 
-    best_val_acc=train(dataset,
-                       alpha,
-                       beta,
-                       gamma,
-                       lambda_,
-                       delta,
-                       max_allowed_degree,
-                       add_fraction,
-                       n_epochs,
-                       alpha_start,
-                       alpha_end,
-                       dropedge_rate,
-                       n_ensemble,
-                       lr,
-                       weight_decay,
-                       reg_weight,
-                       n_hidden,
-                       n_layers,
-                       dropout,
-                       seed)
+    best_val_acc, _ = train(dataset,
+                           alpha,
+                           beta,
+                           gamma,
+                           lambda_,
+                           delta,
+                           max_allowed_degree,
+                           add_fraction,
+                           n_epochs,
+                           alpha_start,
+                           alpha_end,
+                           dropedge_rate,
+                           n_ensemble,
+                           lr,
+                           weight_decay,
+                           reg_weight,
+                           n_hidden,
+                           n_layers,
+                           dropout,
+                           seed)
 
     return best_val_acc
 
@@ -266,27 +266,27 @@ if __name__ == "__main__":
     results = []
     for seed in range(10):
         print(f"\n=== Run {seed+1}/10 with seed {seed} ===")
-        acc = train(dataset,
-                    best_params["alpha"],
-                    best_params["beta"],
-                    best_params["gamma"],
-                    best_params["lambda_"],
-                    best_params["delta"],
-                    best_params["max_allowed_degree"],
-                    best_params["add_fraction"],
-                    best_params["n_epochs"],
-                    best_params["alpha_start"],
-                    best_params["alpha_end"],
-                    best_params["dropedge_rate"],
-                    best_params["n_ensemble"],
-                    best_params["lr"],
-                    best_params["weight_decay"],
-                    best_params["reg_weight"],
-                    best_params["n_hidden"],
-                    best_params["n_layers"],
-                    best_params["dropout"],  # if it exists
-                    seed=seed)
-        results.append(acc)
+        val_acc, test_acc = train(dataset,
+                                    best_params["alpha"],
+                                    best_params["beta"],
+                                    best_params["gamma"],
+                                    best_params["lambda_"],
+                                    best_params["delta"],
+                                    best_params["max_allowed_degree"],
+                                    best_params["add_fraction"],
+                                    best_params["n_epochs"],
+                                    best_params["alpha_start"],
+                                    best_params["alpha_end"],
+                                    best_params["dropedge_rate"],
+                                    best_params["n_ensemble"],
+                                    best_params["lr"],
+                                    best_params["weight_decay"],
+                                    best_params["reg_weight"],
+                                    best_params["n_hidden"],
+                                    best_params["n_layers"],
+                                    best_params["dropout"],  # if it exists
+                                    seed=seed)
+        results.append(test_acc)
 
     print("\n=== Final Results over 10 runs ===")
     print("Accuracies:", results)
