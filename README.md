@@ -7,7 +7,7 @@ Official code for [Do We Need Deep Models or Just Better Graphs? Scalable Link P
 [PyTorch Geometric, PyTorch Sparse](https://data.pyg.org/whl/)
 [DEEP GRAPH LIBRARY (DGL)](https://data.dgl.ai/wheels/repo.html)
 -->
-**Note:** OpenGSL depends on [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html), [PyTorch Sparse](https://github.com/rusty1s/pytorch_sparse) and [DEEP GRAPH LIBRARY (DGL)](https://www.dgl.ai/pages/start.html). To streamline the installation, OpenGSL does **NOT** install these libraries for you. Please install them from the above links for running OpenGSL:
+**Note:** Based on OpenGSL, it depends on [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html), [PyTorch Sparse](https://github.com/rusty1s/pytorch_sparse) and [DEEP GRAPH LIBRARY (DGL)](https://www.dgl.ai/pages/start.html). To streamline the installation, it does **NOT** install these libraries for you. Please install them from the above links for running OpenGSL:
 
 - torch>=1.9.1
 - torch_geometric>=2.5.0
