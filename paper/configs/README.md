@@ -1,1 +1,0 @@
-Contents has been removed to [OpenGSL/opengsl/config](https://github.com/OpenGSL/OpenGSL/tree/main/opengsl/config).
