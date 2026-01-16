@@ -25,7 +25,7 @@ dataset:
 #  homophily_control: 0.8
 
 training:
-  data_cpu: false # whether data should be placed in cpu instead of gpu to save space
+  data_cpu: true # whether data should be placed in cpu instead of gpu to save space
   n_epochs: 1000
   lr: 1e-2
   weight_decay: 5e-4
