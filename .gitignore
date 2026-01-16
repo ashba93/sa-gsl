@@ -1,0 +1,4 @@
+data/wikics/raw/data.json
+data/blogcatalog/processed/data.pt
+*.pt
+data/*
