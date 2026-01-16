@@ -1,5 +1,5 @@
 # SA-GSL
-Official code for [Do We Need Deep Models or Just Better Graphs? Scalable Link Prediction through Simulated Annealing in Graph Structure Learning](). SA-GSL is an algorithm for **Graph Structure Learning(GSL)**. GSL is a family of data-centric learning approaches which jointly optimize the graph structure and the corresponding GNN models.
+Official code for [SA-GSL: Simulated Annealing for Graph Structure Learning](). SA-GSL is an algorithm for **Graph Structure Learning(GSL)**. GSL is a family of data-centric learning approaches which jointly optimize the graph structure and the corresponding GNN models.
 
 ## Installation
 <!--
